@@ -1,6 +1,10 @@
+// src/pages/Register.tsx
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { mockRegister } from '@/lib/storage';
+// 1. Remova a importação do 'mockRegister'
+// import { mockRegister } from '@/lib/storage';
+import apiClient from '@/lib/api'; // <--- 2. Importe o apiClient real
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,16 +24,27 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      mockRegister(username, email, password);
+      // 3. Substitua a lógica do mock pela chamada real da API
+      //    O endpoint /auth/register do Flask espera: { username, email, password }
+      await apiClient.post('/auth/register', { username, email, password });
+      
+      // O resto do fluxo de sucesso está perfeito:
       toast({
         title: 'Conta criada com sucesso!',
         description: 'Faça o login para continuar.',
       });
-      navigate('/login');
-    } catch (error) {
+      navigate('/login'); // Redireciona para o login
+
+    } catch (error: any) { // 4. Trata os erros vindos do backend
+      // Pega a mensagem de erro específica (ex: "E-mail já cadastrado")
+      const errorMsg = error.response?.data?.errors?.username || 
+                       error.response?.data?.errors?.email || 
+                       error.response?.data?.error || // Erro genérico
+                       'Tente novamente';
+                       
       toast({
         title: 'Erro ao criar conta',
-        description: error instanceof Error ? error.message : 'Tente novamente',
+        description: errorMsg,
         variant: 'destructive',
       });
     } finally {

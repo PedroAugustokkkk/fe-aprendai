@@ -1,12 +1,16 @@
+// src/pages/Login.tsx
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
-import { mockLogin } from '@/lib/storage';
+// 1. Remova a importação do 'mockLogin'
+// import { mockLogin } from '@/lib/storage'; 
+import apiClient from '@/lib/api'; // <--- 2. Importe o apiClient real
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast'; // O seu arquivo usa o hook customizado, mantido.
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -21,13 +25,23 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = mockLogin(email, password);
-      login(response.access_token, response.user);
-      navigate('/dashboard');
-    } catch (error) {
+      // 3. Substitua a lógica do mock pela chamada real da API
+      //    O endpoint /auth/login do Flask retorna: { access_token: "..." }
+      const response = await apiClient.post('/auth/login', { email, password });
+
+      // 4. Salve o token no Zustand.
+      //    Como o backend não retorna o objeto 'user' no login (apenas o token),
+      //    passamos 'null' para o 'user'. O token será usado
+      //    para buscar os dados do usuário em outras páginas.
+      login(response.data.access_token, null);
+      
+      navigate('/dashboard'); // Redireciona para o dashboard
+    
+    } catch (error: any) { // 5. Trata os erros vindos do backend
       toast({
         title: 'Erro ao fazer login',
-        description: error instanceof Error ? error.message : 'Tente novamente',
+        // Mostra a mensagem de erro específica do backend
+        description: error.response?.data?.error || 'Email ou senha inválidos. Tente novamente',
         variant: 'destructive',
       });
     } finally {

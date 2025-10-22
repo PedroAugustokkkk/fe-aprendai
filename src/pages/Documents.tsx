@@ -1,13 +1,26 @@
+// src/pages/Documents.tsx
+
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { v4 as uuidv4 } from 'uuid';
+// 1. Remova as importações do mock e a definição de 'Document' se estava lá
+// import { saveDocument, getDocuments, deleteDocument } from '@/lib/db';
+import apiClient from '@/lib/api'; // <--- 2. Importe o apiClient real
 import { useAuthStore } from '@/store/authStore';
-import { saveDocument, getDocuments, deleteDocument } from '@/lib/db';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Upload, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+// 3. Defina o tipo Document aqui (ou importe de types.ts)
+//    (Nota: O backend ainda não retorna esta lista, então o tipo é provisório)
+type Document = {
+  id: number; // Assumindo que o backend terá um ID numérico
+  name: string;
+  uploadedAt: string; // Ou Date, dependendo do que o backend retornar
+  // Poderia ter mais campos, como 'chunk_count'
+};
+
 
 export default function Documents() {
   const [isDragging, setIsDragging] = useState(false);
@@ -15,50 +28,73 @@ export default function Documents() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ['documents', user?.id],
-    queryFn: () => getDocuments(user!.id),
-    enabled: !!user,
-  });
+  // --- 4. Comente ou remova o useQuery ---
+  // O backend ainda não tem o endpoint GET /documents
+  // A 'queryKey' também pode ser simplificada para ['documents']
+  // const { data: documents = [], isLoading: isLoadingDocuments } = useQuery<Document[]>({
+  //   queryKey: ['documents'],
+  //   queryFn: async () => {
+  //     const response = await apiClient.get('/documents');
+  //     return response.data;
+  //   },
+  //   enabled: !!user || !!useAuthStore.getState().token,
+  // });
+  
+  // Substitui por dados mocados VAZIOS por enquanto
+  const documents: Document[] = [];
+  const isLoadingDocuments = false; // Define como falso
 
+  // --- 5. Modifique a mutation de upload ---
   const uploadMutation = useMutation({
+    // mutationFn agora usa apiClient para chamar POST /documents/upload
     mutationFn: async (file: File) => {
-      const doc = {
-        id: uuidv4(),
-        name: file.name,
-        file: file,
-        uploadedAt: new Date().toISOString(),
-        userId: user!.id,
-      };
-      await saveDocument(doc);
-      return doc;
+      // Cria um objeto FormData para enviar o arquivo
+      const formData = new FormData();
+      formData.append('file', file); // 'file' é o nome do campo esperado pelo backend
+
+      const response = await apiClient.post('/documents/upload', formData, {
+        // Define o cabeçalho correto para envio de arquivos
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data; // O backend retorna { message: "..." }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
-      toast({ title: 'Sucesso! Documento enviado.' });
+    onSuccess: (data) => {
+      // queryClient.invalidateQueries({ queryKey: ['documents'] }); // Reativar quando GET existir
+      toast({ title: 'Sucesso!', description: data.message });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
-        title: 'Erro ao enviar documento',
-        description: 'Tente novamente',
+        title: 'Erro no upload',
+        description: error.response?.data?.error || 'Tente novamente.',
         variant: 'destructive',
       });
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deleteDocument,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents', user?.id] });
-      toast({ title: 'Documento removido!' });
-    },
-  });
+  // --- 6. Comente ou remova a mutation de delete ---
+  // O backend ainda não tem o endpoint DELETE /documents/<id>
+  // const deleteMutation = useMutation({
+  //   mutationFn: async (id: number) => { // ID é number
+  //      await apiClient.delete(`/documents/${id}`);
+  //   },
+  //   onSuccess: () => {
+  //     queryClient.invalidateQueries({ queryKey: ['documents'] });
+  //     toast({ title: 'Documento removido!' });
+  //   },
+  //   onError: (error: any) => {
+  //       toast({ title: 'Erro ao remover', description: error.response?.data?.error, variant: 'destructive' });
+  //   }
+  // });
 
+  // Handler para quando um arquivo é selecionado (via clique ou drop)
   const handleFileSelect = (files: FileList | null) => {
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
     const file = files[0];
     if (file && file.type === 'application/pdf') {
+      // Chama a mutation de upload com o arquivo
       uploadMutation.mutate(file);
     } else {
       toast({
@@ -69,11 +105,12 @@ export default function Documents() {
     }
   };
 
+  // Funções para o Drag-and-Drop (sem mudanças lógicas)
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     handleFileSelect(e.dataTransfer.files);
-  }, []);
+  }, []); // Adicione dependências vazias para useCallback
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -85,15 +122,9 @@ export default function Documents() {
     setIsDragging(false);
   }, []);
 
+  // Função de formatação de data (sem mudanças)
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    // ... (código existente)
   };
 
   return (
@@ -111,23 +142,27 @@ export default function Documents() {
             <CardTitle>Enviar Documento</CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Componente Dropzone */}
             <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
                 isDragging
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/50'
-              }`}
+              } ${uploadMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`} // Feedback visual
             >
+              {/* Input escondido */}
               <input
                 type="file"
                 accept=".pdf"
                 onChange={(e) => handleFileSelect(e.target.files)}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={uploadMutation.isPending}
+                disabled={uploadMutation.isPending} // Desabilita durante o upload
+                id="file-upload" // Adiciona ID para o Label
               />
+              {/* Conteúdo visual do dropzone */}
               {uploadMutation.isPending ? (
                 <div className="flex flex-col items-center gap-2">
                   <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -136,7 +171,8 @@ export default function Documents() {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2">
+                // Adiciona um Label para acessibilidade e clique
+                <label htmlFor="file-upload" className="flex flex-col items-center gap-2 cursor-pointer">
                   <Upload className="h-10 w-10 text-muted-foreground" />
                   <div>
                     <p className="font-medium">
@@ -146,18 +182,24 @@ export default function Documents() {
                       ou clique para selecionar
                     </p>
                   </div>
-                </div>
+                </label>
               )}
             </div>
           </CardContent>
         </Card>
 
+        {/* Lista de Documentos */}
         <Card>
           <CardHeader>
             <CardTitle>Documentos Enviados</CardTitle>
           </CardHeader>
           <CardContent>
-            {documents.length === 0 ? (
+            {/* // 7. Adiciona estado de loading para a lista */}
+            {isLoadingDocuments ? (
+              <div className="flex justify-center py-8">
+                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : documents.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 Nenhum documento enviado ainda
               </p>
@@ -172,17 +214,23 @@ export default function Documents() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{doc.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(doc.uploadedAt)}
+                         {/* // 8. Adapta para o caso de não ter data ainda */}
+                        {doc.uploadedAt ? formatDate(doc.uploadedAt) : 'Processando...'}
                       </p>
                     </div>
-                    <Button
+                    {/* // 9. Comenta o botão de deletar por enquanto */}
+                    {/* <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteMutation.mutate(doc.id)}
-                      disabled={deleteMutation.isPending}
+                      // onClick={() => deleteMutation.mutate(doc.id)} // ID é number
+                      // disabled={deleteMutation.isPending && deleteMutation.variables === doc.id}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      {deleteMutation.isPending && deleteMutation.variables === doc.id ? (
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                         <Trash2 className="h-4 w-4" />
+                      )}
+                    </Button> */}
                   </div>
                 ))}
               </div>
