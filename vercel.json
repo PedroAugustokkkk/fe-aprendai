@@ -1,0 +1,13 @@
+{
+  "headers": [ // Define cabeçalhos de resposta
+    {
+      "source": "/(.*)", // Aplica a todas as rotas do seu site
+      "headers": [ // Lista de cabeçalhos
+        {
+          "key": "Content-Security-Policy", // O cabeçalho que queremos sobrescrever
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://lovable.dev; font-src 'self'; connect-src 'self' https://fs-aprendai.onrender.com;"
+        }
+      ]
+    }
+  ]
+}
