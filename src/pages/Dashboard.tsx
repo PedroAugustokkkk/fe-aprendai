@@ -36,7 +36,7 @@ export default function Dashboard() {
     queryKey: ['tasks'],
     // queryFn agora usa o apiClient para chamar GET /tasks
     queryFn: async () => {
-      const response = await apiClient.get('/tasks');
+      const response = await apiClient.get('/tasks/');
       return response.data; // O backend retorna a lista de tarefas
     },
     // Mantém a lógica de só rodar se houver um usuário (ou convidado)
