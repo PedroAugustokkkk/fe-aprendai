@@ -1,73 +1,76 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Chat from "./pages/Chat";
-import Documents from "./pages/Documents";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
+import { Toaster } from "@/components/ui/toaster"; // Importa o Toaster
+import { Toaster as Sonner } from "@/components/ui/sonner"; // Importa o Sonner como Toaster
+import { TooltipProvider } from "@/components/ui/tooltip"; // Importa o TooltipProvider
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // Importa o QueryClient e QueryClientProvider
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // Importa BrowserRouter, Routes, Route, Navigate
+import { ProtectedRoute } from "./components/ProtectedRoute"; // Importa o ProtectedRoute
+// import Login from "./pages/Login"; // Comentado - Não precisamos mais da página de Login
+// import Register from "./pages/Register"; // Comentado - Não precisamos mais da página de Registro
+import Dashboard from "./pages/Dashboard"; // Importa o Dashboard
+import Chat from "./pages/Chat"; // Importa o Chat
+import Documents from "./pages/Documents"; // Importa o Documents
+import Settings from "./pages/Settings"; // Importa o Settings
+import NotFound from "./pages/NotFound"; // Importa o NotFound
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient(); // Cria uma nova instância do QueryClient
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Navigate to="/dashboard" replace />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/chat"
-            element={
-              <ProtectedRoute>
-                <Chat />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/documents"
-            element={
-              <ProtectedRoute>
-                <Documents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => ( // Define o componente App
+  <QueryClientProvider client={queryClient}> {/* // Fornece o QueryClient para a aplicação */}
+    <TooltipProvider> {/* // Fornece o TooltipProvider para a aplicação */}
+      <Toaster /> {/* // Renderiza o Toaster */}
+      <Sonner /> {/* // Renderiza o Sonner */}
+      <BrowserRouter> {/* // Fornece o roteamento para a aplicação */}
+        <Routes> {/* // Define as rotas da aplicação */}
+          {/* Rota de Login comentada - Não será mais acessível */}
+          {/* <Route path="/login" element={<Login />} /> */} {/* // Define a rota para a página de Login */}
+          {/* Rota de Registro comentada - Não será mais acessível */}
+          {/* <Route path="/register" element={<Register />} /> */} {/* // Define a rota para a página de Registro */}
+          <Route // Define a rota para a página inicial
+            path="/" // Define o caminho da rota
+            element={ // Define o elemento a ser renderizado
+              <ProtectedRoute> {/* // Protege a rota */}
+                {/* O ProtectedRoute vai criar um guest e redirecionar para /dashboard */}
+                <Navigate to="/dashboard" replace /> {/* // Redireciona para a página de Dashboard */}
+              </ProtectedRoute> // Fim do ProtectedRoute
+            } // Fim do elemento
+          /> // Fim da rota
+          <Route // Define a rota para a página de Dashboard
+            path="/dashboard" // Define o caminho da rota
+            element={ // Define o elemento a ser renderizado
+              <ProtectedRoute> {/* // Protege a rota */}
+                <Dashboard /> {/* // Renderiza o componente Dashboard */}
+              </ProtectedRoute> // Fim do ProtectedRoute
+            } // Fim do elemento
+          /> // Fim da rota
+          <Route // Define a rota para a página de Chat
+            path="/chat" // Define o caminho da rota
+            element={ // Define o elemento a ser renderizado
+              <ProtectedRoute> {/* // Protege a rota */}
+                <Chat /> {/* // Renderiza o componente Chat */}
+              </ProtectedRoute> // Fim do ProtectedRoute
+            } // Fim do elemento
+          /> // Fim da rota
+          <Route // Define a rota para a página de Documents
+            path="/documents" // Define o caminho da rota
+            element={ // Define o elemento a ser renderizado
+              <ProtectedRoute> {/* // Protege a rota */}
+                <Documents /> {/* // Renderiza o componente Documents */}
+              </ProtectedRoute> // Fim do ProtectedRoute
+            } // Fim do elemento
+          /> // Fim da rota
+          <Route // Define a rota para a página de Settings
+            path="/settings" // Define o caminho da rota
+            element={ // Define o elemento a ser renderizado
+              <ProtectedRoute> {/* // Protege a rota */}
+                <Settings /> {/* // Renderiza o componente Settings */}
+              </ProtectedRoute> // Fim do ProtectedRoute
+            } // Fim do elemento
+          /> // Fim da rota
+          <Route path="*" element={<NotFound />} /> {/* // Define a rota para a página NotFound */}
+        </Routes> // Fim das rotas
+      </BrowserRouter> // Fim do BrowserRouter
+    </TooltipProvider> // Fim do TooltipProvider
+  </QueryClientProvider> // Fim do QueryClientProvider
+); // Fim do componente App
 
-export default App;
+export default App; // Exporta o componente App
