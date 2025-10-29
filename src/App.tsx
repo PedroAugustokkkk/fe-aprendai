@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster"; // Importa o Toaster
 import { Toaster as Sonner } from "@/components/ui/sonner"; // Importa o Sonner como Toaster
 import { TooltipProvider } from "@/components/ui/tooltip"; // Importa o TooltipProvider
