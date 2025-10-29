@@ -1,73 +1,50 @@
-// src/components/ProtectedRoute.tsx
-import React, { useEffect, useState } from 'react'; // 1. Importa o React
-import { useAuthStore } from '@/store/authStore';
-import apiClient from '@/lib/api';
-import { Loader2 } from 'lucide-react';
-import { Navigate } from 'react-router-dom'; // 2. Importa o Navigate
+import { useEffect } from 'react'; // Importa o useEffect
+import { Outlet, useNavigate } from 'react-router-dom'; // Importa Outlet e useNavigate
+import { useAuthStore } from '@/store/authStore'; // Importa o store de autenticação
+import apiClient from '@/lib/api'; // Importa o cliente da API
+import { Loader2 } from 'lucide-react'; // Importa o ícone de loader
 
-// 3. Aceita a prop 'children'
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, token, isGuest, setGuestUser, user } = useAuthStore();
-  const [isLoadingGuest, setIsLoadingGuest] = useState(false);
+export function ProtectedRoute() { // Define o componente ProtectedRoute
+  const { isAuthenticated, token, setGuestUser, logout } = useAuthStore(); // Pega estado e ações do store
+  const navigate = useNavigate(); // Hook para navegação programática
 
-  useEffect(() => {
-    const createGuest = async () => {
-      try {
-        const response = await apiClient.post('/auth/guest');
-        setGuestUser(response.data.access_token, response.data.user);
-      } catch (error) {
-        console.error('Falha ao criar sessão de convidado:', error);
-        // Se falhar, talvez redirecionar para o login?
-        // Por enquanto, só paramos o loading
-      } finally {
-        setIsLoadingGuest(false);
-      }
-    };
+  useEffect(() => { // Efeito para rodar na montagem e quando dependências mudam
+    const createGuestIfNeeded = async () => { // Função assíncrona para criar guest
+      // Se NÃO estiver autenticado E NÃO houver token no store...
+      if (!isAuthenticated && !token) { // Verifica se não está autenticado e não há token
+        console.log("Tentando criar sessão de convidado..."); // Loga a tentativa
+        try { // Tenta criar o guest
+          // Chama o backend para criar um guest
+          const response = await apiClient.post('/auth/guest'); // Faz a requisição POST
+          // Salva o token e user no store
+          setGuestUser(response.data.access_token, response.data.user); // Atualiza o store com os dados do guest
+          console.log("Sessão de convidado criada com sucesso."); // Loga o sucesso
+        } catch (error) { // Captura erros
+          console.error('Falha ao criar sessão de convidado:', error); // Loga o erro
+          // Se falhar (ex: backend offline), talvez redirecionar para uma página de erro?
+          // Por agora, apenas logamos. O componente pode retornar null ou um erro.
+        } // Fim do catch
+      } else { // Se já estiver autenticado ou tiver token
+           console.log("Usuário já autenticado ou token existe."); // Log para indicar que não precisa criar guest
+      } // Fim do else
+    }; // Fim da função createGuestIfNeeded
 
-    // 4. LÓGICA CORRIGIDA:
-    // Se não está autenticado E não tem token, cria um convidado.
-    if (!isAuthenticated && !token) {
-      setIsLoadingGuest(true);
-      createGuest();
-    }
+    createGuestIfNeeded(); // Chama a função ao montar ou quando as dependências mudarem
     
-    // 5. BÔNUS: Adiciona lógica para o caso do token existir mas o user não.
-    // (Isso acontece na "re-hidratação" do zustand)
-    // Aqui você deveria ter uma rota /auth/me para validar o token,
-    // mas por agora, se o token existe mas o user não, e não é guest,
-    // vamos assumir que é um login inválido e redirecionar.
-    // *Esta parte pode precisar de ajuste fino com sua lógica de /auth/me*
-    
-    // Por enquanto, vamos focar no bug principal: o createGuest.
-    // A lógica acima (!isAuthenticated && !token) é a mais importante.
+  }, [isAuthenticated, token, setGuestUser, logout, navigate]); // Dependências do useEffect
 
-  }, [isAuthenticated, token, setGuestUser]);
-
-  // 7. Lógica de renderização
+  // Lógica de Renderização Simplificada:
   
-  // Se estivermos no processo de criar um convidado, mostra um spinner
-  if (isLoadingGuest) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+  // Se AINDA não estiver autenticado após o useEffect tentar, mostra um loader.
+  // Isso cobre o tempo da chamada API e a atualização do estado.
+  if (!isAuthenticated) { // Se não estiver autenticado
+      return ( // Retorna o loader
+          <div className="flex h-screen w-full items-center justify-center"> {/* Container flexível */}
+              <Loader2 className="h-8 w-8 animate-spin" /> {/* Ícone de loader */}
+          </div> // Fim do container
+      ); // Fim do retorno do loader
+  } // Fim do if
 
-  // Se (após o useEffect) o usuário estiver autenticado
-  if (isAuthenticated) {
-    // 8. RENDERIZA OS 'CHILDREN' (ex: <Dashboard />)
-    return <>{children}</>;
-  }
-
-  // 9. Se não está autenticado (e não está carregando), REDIRECIONA
-  // (Isso previne o 'return null;' e a tela branca)
-  // Nota: Isso assume que seu <Login /> e <Register /> NÃO estão
-  // envolvidos por <ProtectedRoute>, o que está correto (vimos no App.tsx).
-  if (!isAuthenticated && !isLoadingGuest) {
-     return <Navigate to="/login" replace />;
-  }
-
-  // Fallback final, embora o de cima deva pegar
-  return null;
-}
+  // Se estiver autenticado (após o useEffect), renderiza a rota filha.
+  return <Outlet />; // Renderiza o componente da rota filha (ex: Dashboard)
+} // Fim do componente ProtectedRoute
