@@ -1,29 +1,42 @@
 import axios from 'axios';
-import { useAuthStore } from '@/store/authStore'; // Importa seu store Zustand
+import { useAuthStore } from '@/store/authStore';
 
-// Cria uma instância do axios com a URL base da sua API
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // Lê a URL do .env.local
+  baseURL: import.meta.env.VITE_API_URL, 
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Adiciona um "interceptor" (magia do axios)
-// Isso vai rodar ANTES de CADA requisição
 apiClient.interceptors.request.use(
   (config) => {
-    // Pega o token de dentro do seu Zustand
     const token = useAuthStore.getState().token;
     if (token) {
-      // Se o token existir, adiciona o cabeçalho 'Authorization'
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
+  (error) => { // // Se der erro na requisição
     return Promise.reject(error);
   }
 );
 
-export default apiClient;
+apiClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 422)) {
+      const { isAuthenticated, logout } = useAuthStore.getState();
+      if (isAuthenticated) {
+        console.error("Token inválido ou expirado, fazendo logout forçado.");
+        logout();
+        window.location.replace('/login');
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+
+export default apiClient; 
