@@ -31,7 +31,7 @@ apiClient.interceptors.response.use(
       if (isAuthenticated) {
         console.error("Token inválido ou expirado, fazendo logout forçado.");
         logout();
-        window.location.replace('/login');
+        // window.location.replace('/login');
       }
     }
     return Promise.reject(error);
