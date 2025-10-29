@@ -29,7 +29,7 @@ const App = () => ( // Define o componente App
             path="/" // Define o caminho da rota
             element={ // Define o elemento a ser renderizado
               <ProtectedRoute> {/* // Protege a rota */}
-                <Navigate to="/dashboard" replace /> {/* // Redireciona para a página de Dashboard */}
+                <Dashboard /> {/* // Redireciona para a página de Dashboard */}
               </ProtectedRoute> // Fim do ProtectedRoute
             } // Fim do elemento
           /> // Fim da rota
